@@ -128,21 +128,27 @@ func _main() {
 
 // お湯を沸かす
 func boil(ctx context.Context, water Water) HotWater {
-	// TODO: "boil"という名前のRegionを作成
+	// "boil"という名前のRegionを作成
+	defer trace.StartRegion(ctx, "boil").End()
+
 	time.Sleep(400 * time.Millisecond)
 	return HotWater(water)
 }
 
 // コーヒー豆を挽く
 func grind(ctx context.Context, beans Bean) GroundBean {
-	// TODO: "grind"という名前のRegionを作成
+	// "grind"という名前のRegionを作成
+	defer trace.StartRegion(ctx, "grind").End()
+
 	time.Sleep(200 * time.Millisecond)
 	return GroundBean(beans)
 }
 
 // コーヒーを淹れる
 func brew(ctx context.Context, hotWater HotWater, groundBeans GroundBean) Coffee {
-	// TODO: "brew"という名前のRegionを作成
+	// "brew"という名前のRegionを作成
+	defer trace.StartRegion(ctx, "brew").End()
+
 	time.Sleep(1 * time.Second)
 	// 少ない方を優先する
 	cups1 := Coffee(hotWater / (1 * CupsCoffee).HotWater())
