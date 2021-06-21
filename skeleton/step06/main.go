@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"runtime/trace"
 	"sync"
@@ -102,8 +103,12 @@ func _main() {
 	fmt.Println(water)
 	fmt.Println(beans)
 
-	// TODO: taskCtxをベースにしてerrgroup.WithContextで
+	// taskCtxをベースにしてerrgroup.WithContextで
 	// errgroup.Groupとコンテキストを作成する。
+	eg, ctx := errgroup.WithContext(taskCtx)
+
+	// ランダム用シード
+	rand.Seed(time.Now().UnixNano())
 
 	// お湯を沸かす
 	var hotWater HotWater
@@ -134,7 +139,13 @@ func _main() {
 	for beans > 0 {
 		beans -= 20 * GramBeans
 		eg.Go(func() error {
-			// TODO: キャンセルを検出する
+			// キャンセルを検出する
+			select {
+			case <-ctx.Done():
+				trace.Log(ctx, "grind error", ctx.Err().Error())
+				return nil
+			default:
+			}
 
 			gb, err := grind(ctx, 20*GramBeans)
 			if err != nil {
@@ -195,6 +206,10 @@ func boil(ctx context.Context, water Water) (HotWater, error) {
 		return 0, errors.New("1度に沸かすことのできるお湯は600[ml]までです")
 	}
 	time.Sleep(400 * time.Millisecond)
+	// 一定確率でエラーを発生させる
+	if rand.Intn(100) < 5 {
+		return 0, errors.New("failed to boil")
+	}
 	return HotWater(water), nil
 }
 
@@ -205,6 +220,10 @@ func grind(ctx context.Context, beans Bean) (GroundBean, error) {
 		return 0, errors.New("1度に挽くことのできる豆は20[g]までです")
 	}
 	time.Sleep(200 * time.Millisecond)
+	// 一定確率でエラーを発生させる
+	if rand.Intn(100) < 5 {
+		return 0, errors.New("failed to grind")
+	}
 	return GroundBean(beans), nil
 }
 
