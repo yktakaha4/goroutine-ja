@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"runtime/trace"
 	"sync"
@@ -104,21 +105,27 @@ func _main() {
 
 	var eg errgroup.Group
 
+	// ランダム用シード
+	rand.Seed(time.Now().UnixNano())
+
 	// お湯を沸かす
 	var hotWater HotWater
 	var hwmu sync.Mutex
 	for water > 0 {
 		water -= 600 * MilliLiterWater
-		// TODO: egのGoメソッドで関数として呼び出す
-		hw, err := boil(ctx, 600*MilliLiterWater)
-		if err != nil {
-			// TODO: エラーを返す
-		}
-		hwmu.Lock()
-		defer hwmu.Unlock()
-		hotWater += hw
-		// TODO: エラーが起きなかった場合はnilを返す
-		// ここまで関数にする
+		// egのGoメソッドで関数として呼び出す
+		eg.Go(func() error {
+			hw, err := boil(ctx, 600*MilliLiterWater)
+			if err != nil {
+				// エラーを返す
+				return err
+			}
+			hwmu.Lock()
+			defer hwmu.Unlock()
+			hotWater += hw
+			// エラーが起きなかった場合はnilを返す
+			return nil
+		})
 	}
 
 	// 豆を挽く
@@ -165,9 +172,13 @@ func _main() {
 		})
 	}
 
-	// TODO: eg2のWaitで待ち合わせを行う。
-	// エラーが発生した場合はエラーをos.Stderrに出力する。
-	// returnで_main関数を終了する。
+	// eg2のWaitで待ち合わせを行う。
+	if err := eg2.Wait(); err != nil {
+		// エラーが発生した場合はエラーをos.Stderrに出力する。
+		fmt.Println(err)
+		// returnで_main関数を終了する。
+		return
+	}
 
 	fmt.Println(coffee)
 }
@@ -179,6 +190,10 @@ func boil(ctx context.Context, water Water) (HotWater, error) {
 		return 0, errors.New("1度に沸かすことのできるお湯は600[ml]までです")
 	}
 	time.Sleep(400 * time.Millisecond)
+	// 一定確率でエラーを発生させる
+	if rand.Intn(100) < 5 {
+		return 0, errors.New("failed to boil")
+	}
 	return HotWater(water), nil
 }
 
@@ -189,6 +204,10 @@ func grind(ctx context.Context, beans Bean) (GroundBean, error) {
 		return 0, errors.New("1度に挽くことのできる豆は20[g]までです")
 	}
 	time.Sleep(200 * time.Millisecond)
+	// 一定確率でエラーを発生させる
+	if rand.Intn(100) < 5 {
+		return 0, errors.New("failed to grind")
+	}
 	return GroundBean(beans), nil
 }
 
