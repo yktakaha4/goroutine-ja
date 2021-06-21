@@ -108,7 +108,7 @@ func _main() {
 		hwCount++
 		water -= 600 * MilliLiterWater
 		// ゴールーチンでboil関数を呼び出す
-		go boil(ctx, hwch, 600 * MilliLiterWater)
+		go boil(ctx, hwch, 600*MilliLiterWater)
 	}
 
 	// 豆を挽く
@@ -144,7 +144,7 @@ func _main() {
 	var coffee Coffee
 	for i := 0; i < cfCount; i++ {
 		// チャネルから送られてくるコーヒーをcoffeeに足していく
-		coffee += <- cfch
+		coffee += <-cfch
 	}
 	fmt.Println(coffee)
 }
